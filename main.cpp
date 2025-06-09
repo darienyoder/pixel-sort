@@ -3,21 +3,12 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
 
-/*
-#define MOVIE_IMPLEMENTATION
-#include "movie.h"
-*/
-
 #include <math.h>
 #include <string>
-#include <python3.12/Python.h>
-
 unsigned char* texture;
 
 int channels;
 int width, height;
-
-// MovieWriter* movie;
 
 bool is_in_bounds(int x, int y)
 {
@@ -91,13 +82,6 @@ int main(int argc, char const *argv[])
     if (argc != 2)
         return 0;
 	texture = stbi_load(argv[1], &width, &height, &channels, 0);
-    // movie = new MovieWriter("output/movie.mp4", width, height, 30);
-
-    // Py_SetProgramName(argv[0]);  /* optional but recommended */
-    Py_Initialize();
-    PyRun_SimpleString("from time import time,ctime\n"
-                        "print 'Today is',ctime(time())\n");
-    Py_Finalize();
 
     for (int i = 0; i < 10; i++)
     {
@@ -116,7 +100,6 @@ int main(int argc, char const *argv[])
         }
         std::string path = "output/" + std::to_string(i) + ".png";
         // stbi_write_png(path.c_str(), width, height, channels, texture, width * channels);
-        // movie->addFrame(path.c_str());
     }
 
     stbi_write_png("output.png", width, height, channels, texture, width * channels);
