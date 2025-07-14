@@ -6,6 +6,8 @@
 #include <math.h>
 #include <string>
 unsigned char* texture;
+unsigned char* noise;
+int noise_height, noise_width;
 
 int channels;
 int width, height;
@@ -20,7 +22,7 @@ int coords_to_index(int x, int y)
     return y * width * channels + x * channels;
 }
 
-class pixel
+class color
 {
 public:
     int r, g, b, a;
@@ -34,6 +36,10 @@ public:
         b = texture[index + 2];
         a = channels > 3 ? texture[index + 3] : 255;
 
+        set_hsl();
+    }
+
+    void set_hsl() {
         float max = std::max(r, std::max(g, b)) / 255.0;
         float min = std::min(r, std::min(g, b)) / 255.0;
 
@@ -48,17 +54,32 @@ public:
         h = (h + 1) / 6.0;
     }
     
-    pixel(int index) {
+    color(int index) {
         load(index);
     }
     
-    pixel(int x, int y) {
+    color(int x, int y) {
         load(coords_to_index(x, y));
+    }
+
+    color(int r_, int g_, int b_, int a_ = 255) {
+        r = r_;
+        g = g_;
+        b = b_;
+        a = a_;
+    }
+
+    float distance(color c) {
+        return sqrt(pow(r - c.r, 2) + pow(g - c.g, 2) + pow(b - c.b, 2));
     }
 private:
 };
 
-
+color get_pixel(unsigned char* image, int x, int y, int w = noise_width, int h = noise_height)
+{
+    int index = ((y * w + x) % (w * h)) * channels;
+    return color(image[index], image[index + 1], image[index + 2], image[index + 3]);
+}
 
 void swap_pixels(int x1, int y1, int x2, int y2)
 {
@@ -71,32 +92,50 @@ void swap_pixels(int x1, int y1, int x2, int y2)
         for (int i = 0; i < channels; i++)
         {
             temp[i] = texture[index_1 + i];
-            texture[index_1 + i] = texture[index_2 + i];
+            // texture[index_1 + i] = texture[index_2 + i];
             texture[index_2 + i] = temp[i];
         }
     }
+}
+
+int flow_x(int x, int y)
+{
+    return (get_pixel(noise, x / 2 * 2, y / 2 * 2).r / 10) % 9 - 4;
+}
+
+int flow_y(int x, int y)
+{
+    return (get_pixel(noise, x / 2 * 2, y / 2 * 2).g / 10) % 9 - 4;
+}
+
+
+void process_pixel(int x, int y)
+{
+    color pixel(x, y);
+    color compare(x + flow_x(x, y), y + flow_y(x, y));
+
+    if (pixel.l > compare.l)
+        swap_pixels(x, y, x + flow_x(x, y), y + flow_y(x, y));
 }
 
 int main(int argc, char const *argv[])
 {
     if (argc != 2)
         return 0;
+	noise = stbi_load("noise.png", &noise_width, &noise_height, &channels, 0);
 	texture = stbi_load(argv[1], &width, &height, &channels, 0);
 
-    for (int i = 0; i < 10; i++)
+    for (int i = 0; i < 100; i++)
     {
-        for (int checker_x = 0; checker_x < 2; checker_x++)
-        for (int checker_y = 0; checker_y < 2; checker_y++)
-        for (int x_ = 0; x_ < width / 2; x_++)
-        for (int y_ = 0; y_ < height / 2; y_++)
+        for (int checker_x = 0; checker_x < 1; checker_x++)
+        for (int checker_y = 0; checker_y < 1; checker_y++)
+        for (int x_ = 0; x_ < width / 1; x_++)
+        for (int y_ = 0; y_ < height / 1; y_++)
         {
-            int x = x_ * 2 + checker_x;
-            int y = y_ * 2 + checker_y;
+            int x = x_ * 1 + checker_x;
+            int y = y_ * 1 + checker_y;
 
-            if (pixel(x, y).l > pixel(x + 1, y).l)
-                swap_pixels(x, y, x + 1, y);
-            if (pixel(x, y).l > pixel(x, y + 1).h)
-                swap_pixels(x, y, x, y + 1);
+            process_pixel(x, y);
         }
         std::string path = "output/" + std::to_string(i) + ".png";
         // stbi_write_png(path.c_str(), width, height, channels, texture, width * channels);
