@@ -1,6 +1,6 @@
 sorter:
 	g++ *.cpp *.h -o sorter
-	./sorter big-me.png
+	./sorter me.png
 	open output.png
 
 clean:

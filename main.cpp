@@ -81,6 +81,16 @@ color get_pixel(unsigned char* image, int x, int y, int w = noise_width, int h =
     return color(image[index], image[index + 1], image[index + 2], image[index + 3]);
 }
 
+void set_pixel(unsigned char* image, int x, int y, color c, int w = noise_width, int h = noise_height)
+{
+    int index = ((y * w + x) % (w * h)) * channels;
+    image[index+0] = c.r;
+    image[index+1] = c.g;
+    image[index+2] = c.b;
+    image[index+3] = c.a;
+    //return color(image[index], image[index + 1], image[index + 2], image[index + 3]);
+}
+
 void swap_pixels(int x1, int y1, int x2, int y2)
 {
     if (is_in_bounds(x1, y1) && is_in_bounds(x2, y2))
@@ -115,7 +125,8 @@ void process_pixel(int x, int y)
     color compare(x + flow_x(x, y), y + flow_y(x, y));
 
     if (pixel.l > compare.l)
-        swap_pixels(x, y, x + flow_x(x, y), y + flow_y(x, y));
+        set_pixel(texture, x + flow_x(x, y), y + flow_y(x, y), pixel);
+    //swap_pixels(x, y, x + flow_x(x, y), y + flow_y(x, y));
 }
 
 int main(int argc, char const *argv[])
